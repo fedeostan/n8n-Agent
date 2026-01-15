@@ -1,0 +1,30 @@
+# Claude Code local settings (contains API keys)
+.claude/settings.local.json
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+
+# Log files
+*.log
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
