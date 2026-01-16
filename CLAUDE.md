@@ -1,13 +1,43 @@
 # N8N Workflow Automation Agent
 
-You are an expert n8n workflow automation agent. When this folder is opened, your primary role is to help build, debug, and manage n8n workflows.
+You are an expert n8n workflow automation agent with Claude as the brain. When this folder is opened, your primary role is to help build, debug, and manage n8n workflows using intelligent agent orchestration.
 
 ## Your Role
 
 You are a specialized assistant for n8n workflow automation with access to:
-- **n8n-mcp server**: Full API access to create, validate, execute, and manage workflows
+- **n8n-mcp**: Full API access to create, validate, execute, and manage workflows
+- **Supabase MCP**: Database operations for user data, chat history, and state management
 - **n8n-skills**: 7 expert skills for building production-ready workflows
-- **Client documentation**: Context about each client's instance, credentials, and existing workflows
+- **Client documentation**: Context about each client's instance, credentials, and projects
+
+## MCP Integrations
+
+This agent uses MCPs for external communication. Always use the appropriate MCP for each task.
+
+### n8n-mcp (Workflow Automation)
+**Purpose**: Create, validate, test, and manage n8n workflows
+**When to use**: Any workflow operation - creating, reading, updating, validating, testing
+
+Key tools:
+- `search_nodes()` - Find nodes by name or functionality
+- `get_node()` - Get detailed node documentation
+- `validate_workflow()` - Validate workflow structure
+- `n8n_create_workflow()` - Create new workflows
+- `n8n_update_partial_workflow()` - Incremental updates (preferred)
+- `n8n_test_workflow()` - Test execution
+- `n8n_executions()` - View execution history
+
+### Supabase MCP (Database Operations)
+**Purpose**: User data, chat history, state management
+**When to use**: Reading/writing user profiles, executing SQL, managing database schema
+
+Key tools:
+- `execute_sql()` - Run SQL queries
+- `list_tables()` - View database structure
+- `apply_migration()` - Apply schema changes
+- `get_logs()` - Debug database issues
+
+**Active Project**: `fbavheqqqdoscxrmyaua`
 
 ## Available Tools (via n8n-mcp)
 
@@ -85,7 +115,7 @@ Use the `/switch-instance` command to change to a different client's n8n instanc
 Each client has a folder in `clients/` containing:
 - `README.md` - Instance overview and notes
 - `credentials.md` - Available credentials (names only, no secrets)
-- `workflows/` - Exported workflow JSON files
+- `projects/` - Client-specific projects (each project has its own folder)
 
 ## Slash Commands
 
@@ -123,20 +153,44 @@ Each client has a folder in `clients/` containing:
 
 ```
 n8n agent/
-├── CLAUDE.md          # This file - agent instructions
-├── .mcp.json          # MCP server configuration
-├── .claude/           # Claude Code configuration
-│   ├── commands/      # Slash commands
-│   └── skills/        # n8n-skills
-├── clients/           # Client-specific documentation
-├── templates/         # Reusable workflow patterns
-└── docs/              # General documentation
+├── CLAUDE.md              # This file - agent instructions
+├── .mcp.json              # MCP server configuration
+├── .claude/
+│   ├── commands/          # Slash commands
+│   └── skills/            # n8n-skills (7 expert skills)
+├── clients/
+│   └── [client-name]/
+│       ├── README.md      # Instance info
+│       ├── credentials.md # Credential inventory
+│       └── projects/
+│           └── [project-name]/
+│               ├── README.md        # Project overview
+│               ├── ARCHITECTURE.md  # Technical design
+│               └── workflows/       # Workflow files
+├── templates/             # Reusable workflow patterns
+└── docs/                  # General documentation
 ```
+
+### Active Projects
+
+| Client | Project | Description |
+|--------|---------|-------------|
+| fedeostan | [shopping-assistant](clients/fedeostan/projects/shopping-assistant/) | Personal shopping assistant with buyer personas |
 
 ## Getting Started
 
 When starting a new session:
 1. Check which instance is currently active
-2. Review relevant client documentation if working on a specific project
-3. Use `/brainstorm` for complex tasks to plan before building
-4. Always validate and test before deploying to production
+2. Check the **Active Projects** table above for current work
+3. Review the project's README.md for objectives and status
+4. Use `/brainstorm` for complex tasks to plan before building
+5. Always validate and test before deploying to production
+
+### Working on a Project
+
+When working on a specific project:
+1. Read the project's `README.md` for context and objectives
+2. Check `ARCHITECTURE.md` for technical design decisions
+3. Use Supabase MCP for database operations
+4. Use n8n-mcp for workflow operations
+5. Update project documentation as you make changes

@@ -1,0 +1,874 @@
+{
+  "name": "Psychological Shopping Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "chat-trigger",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        560
+      ],
+      "webhookId": "shopping-assistant"
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatInput = $input.first().json;\nconst sessionId = chatInput.sessionId || 'unknown';\nconst message = chatInput.chatInput || chatInput.action?.text || '';\nconst emailRegex = /[\\\\w.-]+@[\\\\w.-]+\\\\.\\\\w+/i;\nconst emailMatch = message.match(emailRegex);\nreturn [{json: {sessionId, message, emailFromMessage: emailMatch ? emailMatch[0].toLowerCase() : null, timestamp: new Date().toISOString()}}];"
+      },
+      "id": "session-manager",
+      "name": "Session Manager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "shopping_users"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "email",
+              "value": "={{ $json.sessionId }}"
+            }
+          ]
+        },
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "id": "get-user-state",
+      "name": "Get User State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        448,
+        560
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "1nHtKdqP6BQ0oJ1b",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sessionData = $('Session Manager').first().json;\nconst userResults = $input.all();\nlet userState = 'NEW';\nlet userData = null;\nif (userResults.length > 0 && userResults[0].json.id) {\n  userData = userResults[0].json;\n  userState = userData.state || 'NEW';\n}\nreturn [{json: {...sessionData, userState, userData, hasUser: userData !== null}}];"
+      },
+      "id": "process-user-state",
+      "name": "Process User State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.userState }}",
+                    "rightValue": "PROFILED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "profiled"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.userState }}",
+                    "rightValue": "ONBOARDING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "onboarding"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.userState }}",
+                    "rightValue": "NEW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "new_user"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "route-by-state",
+      "name": "Route by State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "You are a friendly shopping assistant greeting a new user. Your ONLY goal: Get their email address. Be warm (2-3 sentences). Ask for email to save preferences. Confirm when received."
+        },
+        "promptType": "define"
+      },
+      "id": "email-collector",
+      "name": "Email Collector",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1248,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7
+        }
+      },
+      "id": "openai-email",
+      "name": "OpenAI Email",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        1184
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "4gkGpv07N8osqtio",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "id": "memory-email",
+      "name": "Memory Email",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1376,
+        1184
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json.output || $input.first().json.text || '';\nconst originalMessage = $('Session Manager').first().json.message;\nconst emailRegex = /[\\\\w.-]+@[\\\\w.-]+\\\\.\\\\w+/gi;\nconst allText = response + ' ' + originalMessage;\nconst emails = allText.match(emailRegex);\nif (emails && emails.length > 0) {\n  return [{json: {email: emails[0].toLowerCase(), response, extracted: true, sessionId: $('Session Manager').first().json.sessionId}}];\n}\nreturn [{json: {email: null, response, extracted: false, sessionId: $('Session Manager').first().json.sessionId}}];"
+      },
+      "id": "extract-email",
+      "name": "Extract Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.extracted }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "id": "condition-1768508295302-mvkdur4fl"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "email-check",
+      "name": "Email Extracted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "shopping_users"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "state": "ONBOARDING",
+            "onboarding_step": 0
+          }
+        },
+        "options": {}
+      },
+      "id": "create-user",
+      "name": "Create User",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2160,
+        960
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1nHtKdqP6BQ0oJ1b",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "You are a shopping psychologist. Ask ONE question per message to classify into: IMPULSE_SHOPPER, ANALYTICAL_BUYER, DEAL_HUNTER, BRAND_LOYALIST, ETHICAL_SHOPPER, QUALITY_FOCUSED. Questions: Step 0-Shopping speed, Step 1-What matters most, Step 2-Quality vs price, Step 3-First thing looked at, Step 4-Ideal experience. After step 4: CLASSIFICATION_COMPLETE: [PERSONA]"
+        },
+        "promptType": "define"
+      },
+      "id": "profiling-agent",
+      "name": "Profiling Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1248,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7
+        }
+      },
+      "id": "openai-profiling",
+      "name": "OpenAI Profiling",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        672
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "4gkGpv07N8osqtio",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }}",
+        "contextWindowLength": 15
+      },
+      "id": "memory-profiling",
+      "name": "Memory Profiling",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1376,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json.output || '';\nconst userData = $('Process User State').first().json.userData || {};\nconst userMessage = $('Session Manager').first().json.message;\nconst currentStep = userData.onboarding_step || 0;\nconst previousAnswers = userData.profiling_answers || [];\nconst match = response.match(/CLASSIFICATION_COMPLETE:\\\\s*(\\\\w+)/i);\nif (match) {\n  return [{json: {email: userData.email, action: 'COMPLETE', persona_type: match[1].toUpperCase(), response: response.replace(/CLASSIFICATION_COMPLETE.*$/i, '').trim(), profiling_answers: [...previousAnswers, {step: currentStep, answer: userMessage}]}}];\n}\nreturn [{json: {email: userData.email, action: 'UPDATE', newStep: currentStep + 1, profiling_answers: [...previousAnswers, {step: currentStep, answer: userMessage}], response}}];"
+      },
+      "id": "process-profiling",
+      "name": "Process Profiling",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "COMPLETE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "condition-1768508318971-37m5wgt1w"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "profiling-check",
+      "name": "Profiling Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "shopping_users"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "state": "PROFILED",
+            "persona_type": "={{ $json.persona_type }}",
+            "profiling_answers": "={{ JSON.stringify($json.profiling_answers) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "complete-profile",
+      "name": "Complete Profile",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2160,
+        464
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1nHtKdqP6BQ0oJ1b",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "shopping_users"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "onboarding_step": "={{ $json.newStep }}",
+            "profiling_answers": "={{ JSON.stringify($json.profiling_answers) }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "update-step",
+      "name": "Update Step",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2160,
+        656
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1nHtKdqP6BQ0oJ1b",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "You are an expert personal shopping assistant with access to real-time web search.\n\nUSER INFO:\n- Email: {{ $('Process User State').first().json.userData?.email }}\n- Persona: {{ $('Process User State').first().json.userData?.persona_type }}\n- Preferences: {{ JSON.stringify($('Process User State').first().json.userData?.preferences || {}) }}\n\n**CRITICAL: YOU MUST USE YOUR SEARCH TOOLS**\nWhenever a user asks about ANY product, you MUST:\n1. IMMEDIATELY call the search tool (search_products or Perplexity search)\n2. NEVER make up product information or prices\n3. ALWAYS provide real links from the search results\n\nAVAILABLE TOOLS:\n- search_products / Perplexity search: Search the internet for products. USE THIS FOR EVERY PRODUCT REQUEST!\n- get_preferences: Get user's saved sizes, brands, budget\n\nWORKFLOW FOR EVERY PRODUCT REQUEST:\n1. User asks for something (e.g., 'I need running shoes')\n2. You MUST call the search tool with a good query (e.g., 'best running shoes 2024 price')\n3. Present 3-5 results WITH REAL LINKS from the search\n4. Personalize based on their persona\n\nPERSONA-BASED PRESENTATION:\n- IMPULSE_SHOPPER: 'Hot picks!' 'Trending now!' Quick, exciting\n- ANALYTICAL_BUYER: Detailed specs, comparisons, review scores\n- DEAL_HUNTER: Focus on price, discounts, value\n- BRAND_LOYALIST: Highlight brand reputation\n- ETHICAL_SHOPPER: Sustainability, eco-friendly aspects\n- QUALITY_FOCUSED: Materials, durability, craftsmanship\n\nRESPONSE FORMAT (after searching):\nHere are some great options I found:\n\n1. **[Product Name]** - $XX\n   [Brief description matching their persona]\n   Link: [actual URL from search]\n\n2. ...\n\nNEVER say 'I don't have access to current products' - YOU DO via the search tools!\nNEVER make up prices or URLs - ALWAYS search first!\n\nGREETING: Welcome back! What would you like to shop for today?"
+        },
+        "promptType": "define"
+      },
+      "id": "shopping-agent",
+      "name": "Shopping Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1248,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.7
+        }
+      },
+      "id": "openai-shopping",
+      "name": "OpenAI Shopping",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        272
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "4gkGpv07N8osqtio",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Process User State').first().json.userData?.email || $('Session Manager').first().json.sessionId }}",
+        "contextWindowLength": 20
+      },
+      "id": "postgres-memory",
+      "name": "Postgres Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        272
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1nHtKdqP6BQ0oJ1b",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\\n  \\\"model\\\": \\\"llama-3.1-sonar-large-128k-online\\\",\\n  \\\"messages\\\": [{\\\"role\\\": \\\"system\\\", \\\"content\\\": \\\"Search for products. Return 5 items with: name, price, features, purchase link.\\\"}, {\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"{query}\\\"}],\\n  \\\"return_citations\\\": true\\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "query",
+              "description": "Product search query"
+            }
+          ]
+        }
+      },
+      "id": "product-search",
+      "name": "Product Search",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        272
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "qMXOOqLQaHONn3k2",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "get_preferences",
+        "description": "Get user preferences: sizes, brands, budget, style."
+      },
+      "id": "get-prefs",
+      "name": "Get Preferences",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "messages": {
+          "message": [
+            {}
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        272
+      ],
+      "id": "25b240c4-9f30-4a27-8f25-06c67c0081a4",
+      "name": "Perplexity search",
+      "credentials": {
+        "perplexityApi": {
+          "id": "xq5XlNDQET2KwdPS",
+          "name": "Perplexity account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Session Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Manager": {
+      "main": [
+        [
+          {
+            "node": "Get User State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User State": {
+      "main": [
+        [
+          {
+            "node": "Process User State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process User State": {
+      "main": [
+        [
+          {
+            "node": "Route by State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by State": {
+      "main": [
+        [
+          {
+            "node": "Shopping Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Profiling Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Collector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Email": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Collector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Email": {
+      "ai_memory": [
+        [
+          {
+            "node": "Email Collector",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Collector": {
+      "main": [
+        [
+          {
+            "node": "Extract Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Email": {
+      "main": [
+        [
+          {
+            "node": "Email Extracted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Extracted?": {
+      "main": [
+        [
+          {
+            "node": "Create User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Profiling": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Profiling Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Profiling": {
+      "ai_memory": [
+        [
+          {
+            "node": "Profiling Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profiling Agent": {
+      "main": [
+        [
+          {
+            "node": "Process Profiling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Profiling": {
+      "main": [
+        [
+          {
+            "node": "Profiling Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Profiling Complete?": {
+      "main": [
+        [
+          {
+            "node": "Complete Profile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Shopping": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Shopping Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Shopping Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Shopping Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Preferences": {
+      "ai_tool": [
+        [
+          {
+            "node": "Shopping Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Shopping Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

@@ -27,6 +27,19 @@
 
 ## Active Credentials
 
+### AI & ML Services
+
+| n8n Credential Name | Service | Status | Rate Limits | Notes |
+|---------------------|---------|--------|-------------|-------|
+| OpenAI API | OpenAI | REQUIRED | Standard | For GPT-4o and GPT-4o-mini agents |
+| Perplexity API | Perplexity | REQUIRED | Standard | HTTP Header Auth for product search |
+
+### Databases
+
+| n8n Credential Name | Service | Status | Rate Limits | Notes |
+|---------------------|---------|--------|-------------|-------|
+| Shopping DB | PostgreSQL | REQUIRED | N/A | User data + chat memory storage |
+
 ### Communication & Notifications
 
 | n8n Credential Name | Service | Status | Rate Limits | Notes |
