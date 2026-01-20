@@ -1,4 +1,4 @@
-# Client: Fedeostan (Personal)
+# Client: Fedeostan (Cloud)
 
 ## Instance Information
 
@@ -6,7 +6,10 @@
 |-------|-------|
 | Instance URL | https://fedeostan.app.n8n.cloud |
 | Type | Personal / Development |
-| Status | Active |
+| Status | Secondary (Cloud) |
+| API Key | Stored in `.mcp.json` (not committed) |
+
+> **Note**: Primary instance is now `fedeostan-selfhosted` (Railway). This cloud instance is kept for reference and backup.
 
 ## Overview
 

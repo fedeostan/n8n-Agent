@@ -1,0 +1,50 @@
+[
+  {
+    "codigo": "IVA10_5",
+    "nombre": "Iva 10,5%",
+    "tasaDefault": 0,
+    "porcentaje": 10.5,
+    "ID": 2
+  },
+  {
+    "codigo": "IVA21",
+    "nombre": "Iva 21%",
+    "tasaDefault": 1,
+    "porcentaje": 21,
+    "ID": 1
+  },
+  {
+    "codigo": "IVA2_5",
+    "nombre": "Iva 2.5%",
+    "tasaDefault": 0,
+    "porcentaje": 2.5,
+    "ID": 5
+  },
+  {
+    "codigo": "IVA27",
+    "nombre": "Iva 27%",
+    "tasaDefault": 0,
+    "porcentaje": 27,
+    "ID": 3
+  },
+  {
+    "codigo": "IVA5",
+    "nombre": "Iva 5%",
+    "tasaDefault": 0,
+    "porcentaje": 5,
+    "ID": 6
+  },
+  {
+    "codigo": "IVAEXENTO",
+    "nombre": "Iva Exento",
+    "tasaDefault": 0,
+    "ID": 4
+  },
+  {
+    "codigo": "IVANOGRAVADO",
+    "nombre": "Iva No Gravado",
+    "tasaDefault": 0,
+    "porcentaje": 0,
+    "ID": 8
+  }
+]

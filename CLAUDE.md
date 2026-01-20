@@ -104,9 +104,16 @@ Key tools:
 ## Multi-Client Instance Management
 
 ### Current Configuration
-- **Primary Instance**: fedeostan (personal)
-- **Instance URL**: Configured in `.claude/settings.local.json`
-- **API Key**: Stored securely in `.claude/settings.local.json`
+- **Primary Instance**: fedeostan-selfhosted (Railway)
+- **Instance URL**: https://n8n-production-ccaa.up.railway.app
+- **API Key**: Stored in `.claude/settings.local.json` and `.mcp.json`
+
+### Available Instances
+
+| Instance | Type | URL |
+|----------|------|-----|
+| fedeostan-selfhosted | Primary (Self-Hosted) | https://n8n-production-ccaa.up.railway.app |
+| fedeostan | Secondary (Cloud) | https://fedeostan.app.n8n.cloud |
 
 ### Switching Instances
 Use the `/switch-instance` command to change to a different client's n8n instance. This will update the environment variables for the MCP server connection.

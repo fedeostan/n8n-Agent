@@ -1,0 +1,489 @@
+[
+  {
+    "productoid": 2667486,
+    "nombre": "ACCESORIO SAUNA PORTATIL ",
+    "codigo": "ACCESORIO_SAUNA_PORTATIL",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -15,
+      "nombre": "Venta de Servicios",
+      "codigo": "VENTA_DE_SERVICIOS",
+      "id": -15
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": 2412642,
+    "nombre": "BAÑERA Y ACCESORIOS",
+    "codigo": "BANERA_Y_ACCESORIOS",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": 3064291,
+    "nombre": "ENVIO BAÑERA",
+    "codigo": "ENVIO_BANERA",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -15,
+      "nombre": "Venta de Servicios",
+      "codigo": "VENTA_DE_SERVICIOS",
+      "id": -15
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0,
+    "tipoOperacionIvaSimple": -1
+  },
+  {
+    "productoid": 2329922,
+    "nombre": "EQUIPO 5HP",
+    "codigo": "EQUIPO_5HP",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": 2412634,
+    "nombre": "EQUIPO DE REFRIGERACION",
+    "codigo": "EQUIPO_DE_REFRIGERACION",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 2,
+      "nombre": "Iva 10,5%",
+      "codigo": "IVA10_5",
+      "id": 2
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": 2327924,
+    "nombre": "INSUMOS AL 10,5%",
+    "codigo": "INSUMOS_AL_10,5",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 2,
+      "nombre": "Iva 10,5%",
+      "codigo": "IVA10_5",
+      "id": 2
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": -97,
+    "nombre": "Producto al 21%",
+    "codigo": "PRODUCTO_AL_21",
+    "usrcode": "PROD21",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 1
+  },
+  {
+    "productoid": 2321797,
+    "nombre": "Producto al 21% (Venta de Servicios)",
+    "codigo": "PRODUCTO_AL_21_VENTA_DE_SERVICIOS",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -15,
+      "nombre": "Venta de Servicios",
+      "codigo": "VENTA_DE_SERVICIOS",
+      "id": -15
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1
+  },
+  {
+    "productoid": 2322373,
+    "nombre": "SAUNA PORTATIL",
+    "codigo": "SAUNA_PORTATIL",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": 2324121,
+    "nombre": "SAUNA PORTATIL BONIFICADO ",
+    "codigo": "SAUNA_PORTATIL_BONIFICADO",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 0,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": -98,
+    "nombre": "Servicio al 21%",
+    "codigo": "SERVICIO_AL_21",
+    "usrcode": "SERV21",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -15,
+      "nombre": "Venta de Servicios",
+      "codigo": "VENTA_DE_SERVICIOS",
+      "id": -15
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 1
+  },
+  {
+    "productoid": 2464575,
+    "nombre": "Servicio Genérico al 10.5%",
+    "codigo": "SERVICIO_GENERICO_AL_105",
+    "usrcode": "SERVICIO_GENERICO_AL_105",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 2,
+      "nombre": "Iva 10,5%",
+      "codigo": "IVA10_5",
+      "id": 2
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1
+  },
+  {
+    "productoid": 2464573,
+    "nombre": "Servicio Genérico al 21%",
+    "codigo": "SERVICIO_GENERICO_AL_21",
+    "usrcode": "SERVICIO_GENERICO_AL_21",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1
+  },
+  {
+    "productoid": 2985668,
+    "nombre": "Servicio Genérico Exento",
+    "codigo": "SERVICIO_GENERICO_EXENTO",
+    "usrcode": "SERVICIO_GENERICO_EXENTO",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 8,
+      "nombre": "Iva No Gravado",
+      "codigo": "IVANOGRAVADO",
+      "id": 8
+    },
+    "cuentaContable": {
+      "ID": -10,
+      "nombre": "Venta de Bienes",
+      "codigo": "VENTA_DE_BIENES",
+      "id": -10
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "tipoOperacionIvaSimple": -1
+  },
+  {
+    "productoid": 2378868,
+    "nombre": "SISTEMA DE CRIOTERAPIA",
+    "codigo": "SISTEMA_DE_CRIOTERAPIA",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -15,
+      "nombre": "Venta de Servicios",
+      "codigo": "VENTA_DE_SERVICIOS",
+      "id": -15
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  },
+  {
+    "productoid": 2378887,
+    "nombre": "SISTEMA DE FRIO",
+    "codigo": "SISTEMA_DE_FRIO",
+    "usrcode": "",
+    "codigoBarra": "",
+    "unidadMedida": {
+      "ID": 1,
+      "nombre": "Unidad (U)",
+      "codigo": "07",
+      "id": 1
+    },
+    "categoria": 1,
+    "stockNegativo": false,
+    "tasaIva": {
+      "ID": 1,
+      "nombre": "Iva 21%",
+      "codigo": "IVA21",
+      "id": 1
+    },
+    "cuentaContable": {
+      "ID": -15,
+      "nombre": "Venta de Servicios",
+      "codigo": "VENTA_DE_SERVICIOS",
+      "id": -15
+    },
+    "catFormIVA2002": -1,
+    "precioUltCompra": 0,
+    "activo": 1,
+    "sincronizaStock": 0
+  }
+]

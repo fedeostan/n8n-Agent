@@ -1,0 +1,997 @@
+{
+  "name": "Automatización de Facturas - AlfaHackers v4.1 (Fixed Duplicate Detection)",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://xubio.com/API/1.1/TokenEndpoint",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "793ce525-8aab-48e4-af33-4831ee2613f9",
+      "name": "Xubio_Token1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1600,
+        1728
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "IEPGyaiYpUUJZJA8",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * PRODUCT IDENTIFICATION & IVA SPLIT CALCULATOR v3.1\n * ===================================================\n * Maps Shopify products to Xubio items with correct IVA rates\n * Updated with COMPLETE TransaccionProductoItems schema\n * \n * Verified Product IDs from alfa_xubio_products.json:\n * - EQUIPO DE REFRIGERACION: 2412634 (IVA 10.5%, tasaIva.ID=2)\n * - BAÑERA Y ACCESORIOS: 2412642 (IVA 21%, tasaIva.ID=1)\n * - SAUNA PORTATIL: 2322373 (IVA 21%, tasaIva.ID=1)\n */\n\nconst shopifyData = $('Shopify Trigger3').first().json;\nconst lineItems = shopifyData.line_items || [];\n\n// ===== XUBIO PRODUCT IDs (from alfa_xubio_products.json) =====\nconst XUBIO_PRODUCTS = {\n  EQUIPO_REFRIGERACION: { \n    ID: 2412634, \n    ivaRate: 0.105, \n    ivaId: 2,  // from tasaIva.ID in products\n    codigo: 'EQUIPO_DE_REFRIGERACION'\n  },\n  BANERA_ACCESORIOS: { \n    ID: 2412642, \n    ivaRate: 0.21, \n    ivaId: 1,\n    codigo: 'BANERA_Y_ACCESORIOS'\n  },\n  SAUNA_PORTATIL: { \n    ID: 2322373, \n    ivaRate: 0.21, \n    ivaId: 1,\n    codigo: 'SAUNA_PORTATIL'\n  }\n};\n\n// ===== SHOPIFY → XUBIO PRODUCT MAPPING =====\nconst PRODUCTS = {\n  'ICE_BATH_3_0_PRO': {\n    patterns: ['ice bath 3.0', '3.0 pro', 'ice bath 3'],\n    equipoPercent: 0.80,\n    baneraPercent: 0.20,\n    type: 'ICE_BATH'\n  },\n  'ICE_BATH_POD_PRO': {\n    patterns: ['pod pro', 'ice bath pod'],\n    equipoPercent: 0.80,\n    baneraPercent: 0.20,\n    type: 'ICE_BATH'\n  },\n  'ICE_BATH_O2_PRO': {\n    patterns: ['o2 pro', 'ice bath o2'],\n    equipoPercent: 0.90,\n    baneraPercent: 0.10,\n    type: 'ICE_BATH'\n  },\n  'ICE_BATH_EVOLVE_PRO': {\n    patterns: ['evolve pro', 'ice bath evolve'],\n    equipoPercent: 0.90,\n    baneraPercent: 0.10,\n    type: 'ICE_BATH'\n  },\n  'SAUNA_ON_THE_GO': {\n    patterns: ['sauna', 'on the go'],\n    type: 'SAUNA'\n  }\n};\n\n// ===== HELPER FUNCTIONS =====\nfunction identifyProduct(title) {\n  const normalizedTitle = title.toLowerCase();\n  \n  for (const [key, config] of Object.entries(PRODUCTS)) {\n    const matchCount = config.patterns.filter(pattern => \n      normalizedTitle.includes(pattern.toLowerCase())\n    ).length;\n    \n    if (matchCount > 0) {\n      return { key, ...config };\n    }\n  }\n  return null;\n}\n\nfunction calculateIvaFromTotal(totalWithIva, ivaRate) {\n  // precioSinIva = totalConIva / (1 + ivaRate)\n  const precioSinIva = totalWithIva / (1 + ivaRate);\n  const iva = totalWithIva - precioSinIva;\n  return {\n    precioSinIva: Math.round(precioSinIva * 100) / 100,\n    iva: Math.round(iva * 100) / 100,\n    total: Math.round(totalWithIva * 100) / 100\n  };\n}\n\nfunction buildIceBathItems(totalPrice, equipoPercent, baneraPercent, quantity) {\n  const items = [];\n  \n  const equipoTotal = totalPrice * equipoPercent;\n  const baneraTotal = totalPrice * baneraPercent;\n  \n  const equipoCalc = calculateIvaFromTotal(equipoTotal, XUBIO_PRODUCTS.EQUIPO_REFRIGERACION.ivaRate);\n  const baneraCalc = calculateIvaFromTotal(baneraTotal, XUBIO_PRODUCTS.BANERA_ACCESORIOS.ivaRate);\n  \n  // Equipo de refrigeración - COMPLETE Xubio schema\n  items.push({\n    producto: { ID: XUBIO_PRODUCTS.EQUIPO_REFRIGERACION.ID },\n    descripcion: 'Equipo de refrigeración',\n    cantidad: quantity,\n    precio: equipoCalc.precioSinIva,\n    precioconivaincluido: equipoCalc.total,\n    importe: equipoCalc.precioSinIva * quantity,\n    iva: equipoCalc.iva * quantity,\n    total: equipoCalc.total * quantity,\n    montoExento: 0,\n    porcentajeDescuento: 0,\n    tasaImpositiva: { ID: XUBIO_PRODUCTS.EQUIPO_REFRIGERACION.ivaId }\n  });\n  \n  // Bañera y Accesorios - COMPLETE Xubio schema\n  items.push({\n    producto: { ID: XUBIO_PRODUCTS.BANERA_ACCESORIOS.ID },\n    descripcion: 'Bañera y Accesorios',\n    cantidad: quantity,\n    precio: baneraCalc.precioSinIva,\n    precioconivaincluido: baneraCalc.total,\n    importe: baneraCalc.precioSinIva * quantity,\n    iva: baneraCalc.iva * quantity,\n    total: baneraCalc.total * quantity,\n    montoExento: 0,\n    porcentajeDescuento: 0,\n    tasaImpositiva: { ID: XUBIO_PRODUCTS.BANERA_ACCESORIOS.ivaId }\n  });\n  \n  return items;\n}\n\nfunction buildSaunaItem(totalPrice, quantity) {\n  const saunaCalc = calculateIvaFromTotal(totalPrice, XUBIO_PRODUCTS.SAUNA_PORTATIL.ivaRate);\n  \n  return [{\n    producto: { ID: XUBIO_PRODUCTS.SAUNA_PORTATIL.ID },\n    descripcion: 'Sauna portátil',\n    cantidad: quantity,\n    precio: saunaCalc.precioSinIva,\n    precioconivaincluido: saunaCalc.total,\n    importe: saunaCalc.precioSinIva * quantity,\n    iva: saunaCalc.iva * quantity,\n    total: saunaCalc.total * quantity,\n    montoExento: 0,\n    porcentajeDescuento: 0,\n    tasaImpositiva: { ID: 1 }\n  }];\n}\n\n// ===== MAIN PROCESSING =====\nlet transaccionProductoItems = [];\nlet debugInfo = [];\nlet productSummary = [];\n\nfor (const item of lineItems) {\n  const title = item.title || 'Unknown Product';\n  const quantity = parseInt(item.quantity) || 1;\n  const unitPrice = parseFloat(item.price) || 0;\n  const lineTotal = unitPrice * quantity;\n  \n  const identified = identifyProduct(title);\n  \n  if (identified) {\n    debugInfo.push(`Identified: \"${title}\" -> ${identified.key}`);\n    \n    if (identified.type === 'ICE_BATH') {\n      const items = buildIceBathItems(\n        lineTotal,\n        identified.equipoPercent,\n        identified.baneraPercent,\n        quantity\n      );\n      transaccionProductoItems.push(...items);\n      productSummary.push({\n        shopifyProduct: title,\n        mappedTo: identified.key,\n        split: `${identified.equipoPercent * 100}% Equipo / ${identified.baneraPercent * 100}% Bañera`,\n        totalPrice: lineTotal,\n        xubioItems: items.length\n      });\n    } else if (identified.type === 'SAUNA') {\n      const items = buildSaunaItem(lineTotal, quantity);\n      transaccionProductoItems.push(...items);\n      productSummary.push({\n        shopifyProduct: title,\n        mappedTo: identified.key,\n        split: '100% Sauna',\n        totalPrice: lineTotal,\n        xubioItems: items.length\n      });\n    }\n  } else {\n    debugInfo.push(`UNRECOGNIZED: \"${title}\" - using Sauna fallback`);\n    const fallbackPrice = lineTotal > 0 ? lineTotal : 1;\n    const fallbackCalc = calculateIvaFromTotal(fallbackPrice, 0.21);\n    \n    transaccionProductoItems.push({\n      producto: { ID: XUBIO_PRODUCTS.SAUNA_PORTATIL.ID },\n      descripcion: title.substring(0, 100),\n      cantidad: quantity,\n      precio: fallbackCalc.precioSinIva,\n      precioconivaincluido: fallbackCalc.total,\n      importe: fallbackCalc.precioSinIva * quantity,\n      iva: fallbackCalc.iva * quantity,\n      total: fallbackCalc.total * quantity,\n      montoExento: 0,\n      porcentajeDescuento: 0,\n      tasaImpositiva: { ID: 1 }\n    });\n    \n    productSummary.push({\n      shopifyProduct: title,\n      mappedTo: 'FALLBACK_SAUNA',\n      split: '100% Generic (IVA 21%)',\n      totalPrice: lineTotal,\n      xubioItems: 1\n    });\n  }\n}\n\nconst orderTotal = transaccionProductoItems.reduce((sum, item) => sum + item.total, 0);\n\nreturn {\n  json: {\n    transaccionProductoItems,\n    productSummary,\n    orderTotal: Math.round(orderTotal * 100) / 100,\n    itemCount: transaccionProductoItems.length,\n    debug: debugInfo,\n    shopifyOrderId: shopifyData.id,\n    shopifyOrderNumber: shopifyData.order_number || shopifyData.name,\n    currency: shopifyData.currency || 'ARS'\n  }\n};"
+      },
+      "id": "55659e8f-66c8-4516-8b16-a3eee2a3e072",
+      "name": "Product_Mapper1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1360,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * CUSTOMER TYPE DETECTOR v3.1\n * ===========================\n * Verified Fiscal Categories from alfa_xubio_categorias_fiscales.json:\n * - RI (Responsable Inscripto): ID=1\n * - CF (Consumidor Final): ID=3\n * - MT (Monotributista): ID=4\n * - EX (Exento): ID=5\n * - CE (Exterior): ID=6\n * - NA (IVA No Alcanzado): ID=7\n */\n\nconst shopifyData = $('Shopify Trigger3').first().json;\nconst productData = $('Product_Mapper1').first().json;\n\nconst billing = shopifyData.billing_address || {};\nconst documentField = billing.company || '';\nconst countryCode = billing.country_code || 'AR';\nconst isArgentine = countryCode === 'AR';\n\n// ===== FISCAL CATEGORIES (from alfa_xubio_categorias_fiscales.json) =====\nconst FISCAL_CATEGORIES = {\n  RESPONSABLE_INSCRIPTO: { id: 1, code: 'RI', invoiceType: 'A' },\n  CONSUMIDOR_FINAL: { id: 3, code: 'CF', invoiceType: 'B' },\n  MONOTRIBUTISTA: { id: 4, code: 'MT', invoiceType: 'A' },\n  EXENTO: { id: 5, code: 'EX', invoiceType: 'B' },\n  EXTERIOR: { id: 6, code: 'CE', invoiceType: 'E' },\n  IVA_NO_ALCANZADO: { id: 7, code: 'NA', invoiceType: 'B' }\n};\n\n// ===== DOCUMENT PARSING =====\nfunction parseDocument(docString) {\n  const cleaned = docString.replace(/[^0-9]/g, '');\n  const length = cleaned.length;\n  \n  if (length === 0) {\n    return { type: 'NONE', number: '', isValid: false };\n  }\n  \n  if (length >= 7 && length <= 8) {\n    return { \n      type: 'DNI', \n      number: cleaned, \n      formatted: cleaned,\n      isValid: true \n    };\n  }\n  \n  if (length === 11) {\n    return { \n      type: 'CUIT', \n      number: cleaned, \n      formatted: `${cleaned.slice(0,2)}-${cleaned.slice(2,10)}-${cleaned.slice(10)}`,\n      isValid: validateCuit(cleaned)\n    };\n  }\n  \n  return { type: 'UNKNOWN', number: cleaned, isValid: false };\n}\n\nfunction validateCuit(cuit) {\n  if (cuit.length !== 11) return false;\n  const multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];\n  let sum = 0;\n  for (let i = 0; i < 10; i++) {\n    sum += parseInt(cuit[i]) * multipliers[i];\n  }\n  const mod = sum % 11;\n  const verifier = mod === 0 ? 0 : (mod === 1 ? 9 : 11 - mod);\n  return parseInt(cuit[10]) === verifier;\n}\n\n// ===== COUNTRY CUIT MAPPING =====\nconst COUNTRY_MAP = {\n  'AR': { paisId: 1, cuit: null },\n  'IT': { paisId: 455, cuit: '55-00000354-8' },\n  'ES': { paisId: 448, cuit: '55-00000410-2' },\n  'PT': { paisId: 463, cuit: '55-00000425-0' },\n  'US': { paisId: 322, cuit: '55-00000212-6' },\n  'BR': { paisId: 305, cuit: '55-00000058-7' },\n  'CL': { paisId: 308, cuit: '55-00000152-4' },\n  'UY': { paisId: 345, cuit: '55-00000482-5' },\n  'MX': { paisId: 324, cuit: '55-00000296-2' }\n};\n\n// ===== MAIN PROCESSING =====\nconst document = parseDocument(documentField);\nlet customerData = {\n  document,\n  rawInput: documentField,\n  needsCuitLookup: false,\n  lookupCompleted: false\n};\n\nlet fiscalCategory;\nlet invoiceType;\n\nif (!isArgentine) {\n  const countryData = COUNTRY_MAP[countryCode] || { paisId: 1, cuit: null };\n  fiscalCategory = FISCAL_CATEGORIES.EXTERIOR;\n  invoiceType = 'E';\n  customerData.paisId = countryData.paisId;\n  customerData.cuitGenerico = countryData.cuit;\n  customerData.esclienteextranjero = 1;\n} else if (document.type === 'DNI') {\n  fiscalCategory = FISCAL_CATEGORIES.CONSUMIDOR_FINAL;\n  invoiceType = 'B';\n  customerData.paisId = 1;\n  customerData.esclienteextranjero = 0;\n} else if (document.type === 'CUIT' && document.isValid) {\n  customerData.needsCuitLookup = true;\n  customerData.paisId = 1;\n  customerData.esclienteextranjero = 0;\n  fiscalCategory = FISCAL_CATEGORIES.RESPONSABLE_INSCRIPTO;\n  invoiceType = 'A';\n} else {\n  fiscalCategory = FISCAL_CATEGORIES.CONSUMIDOR_FINAL;\n  invoiceType = 'B';\n  customerData.paisId = 1;\n  customerData.esclienteextranjero = 0;\n}\n\nconst firstName = billing.first_name || '';\nconst lastName = billing.last_name || '';\nconst fullName = `${firstName} ${lastName}`.trim();\n\nreturn {\n  json: {\n    customer: {\n      nombre: firstName,\n      apellido: lastName,\n      fullName,\n      email: shopifyData.email || shopifyData.contact_email || '',\n      phone: billing.phone || '',\n      address: billing.address1 || '',\n      city: billing.city || '',\n      province: billing.province || '',\n      zip: billing.zip || '',\n      countryCode\n    },\n    documentData: customerData,\n    fiscalCategory,\n    invoiceType,\n    transaccionProductoItems: productData.transaccionProductoItems,\n    productSummary: productData.productSummary,\n    orderTotal: productData.orderTotal,\n    shopifyOrderId: productData.shopifyOrderId,\n    shopifyOrderNumber: productData.shopifyOrderNumber,\n    currency: productData.currency,\n    needsCuitLookup: customerData.needsCuitLookup\n  }\n};"
+      },
+      "id": "5017bb5a-316b-4ad2-9e0f-8916c0c7f8ed",
+      "name": "Customer_Type_Detector1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check-cuit-lookup",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.needsCuitLookup }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "daf49990-8f4d-4a7d-9cd3-f0b3018d1cce",
+      "name": "Needs_CUIT_Lookup?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -880,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * CUIT LOOKUP - PRODUCTION READY\n * ===============================\n * \n * TO ENABLE REAL AFIP LOOKUP:\n * Uncomment the HTTP request block below and add TusFacturas credentials\n * \n * Current: Heuristic-based (prefix analysis)\n * Production: TusFacturas API integration\n */\n\nconst input = $json;\nconst cuit = input.documentData.document.number;\nconst prefix = cuit.substring(0, 2);\n\n/*\n// ===== PRODUCTION: TusFacturas API =====\nconst TUSFACTURAS = {\n  usertoken: 'YOUR_USER_TOKEN',\n  apikey: 'YOUR_API_KEY',\n  apitoken: 'YOUR_API_TOKEN'\n};\n\ntry {\n  const response = await this.helpers.request({\n    method: 'POST',\n    url: 'https://www.tusfacturas.app/app/api/v2/clientes/afip-info',\n    body: {\n      usertoken: TUSFACTURAS.usertoken,\n      apikey: TUSFACTURAS.apikey,\n      apitoken: TUSFACTURAS.apitoken,\n      cliente: { documento_nro: cuit, documento_tipo: 'CUIT' }\n    },\n    json: true\n  });\n  \n  const CONDICION_MAP = {\n    'RESPONSABLE INSCRIPTO': { id: 1, invoiceType: 'A', requiresLegend: false },\n    'MONOTRIBUTISTA': { id: 4, invoiceType: 'A', requiresLegend: true },\n    'EXENTO': { id: 5, invoiceType: 'B', requiresLegend: false },\n    'IVA NO ALCANZADO': { id: 7, invoiceType: 'B', requiresLegend: false }\n  };\n  \n  const mapped = CONDICION_MAP[response.condicion_impositiva] || CONDICION_MAP['RESPONSABLE INSCRIPTO'];\n  // ... use mapped values\n} catch (error) {\n  // Fallback to heuristic if API fails\n}\n*/\n\n// ===== HEURISTIC: Prefix-based determination =====\nlet categoriaFiscalId = 1;\nlet invoiceType = 'A';\nlet requiresLegend = false;\nlet condicionImpositiva = 'RESPONSABLE INSCRIPTO';\n\nif (['30', '33', '34'].includes(prefix)) {\n  // Empresa - Responsable Inscripto\n  condicionImpositiva = 'RESPONSABLE INSCRIPTO';\n  categoriaFiscalId = 1;\n  invoiceType = 'A';\n} else if (['20', '23', '24', '27'].includes(prefix)) {\n  // Persona física - assume RI (safest default)\n  condicionImpositiva = 'RESPONSABLE INSCRIPTO';\n  categoriaFiscalId = 1;\n  invoiceType = 'A';\n}\n\nconst output = { ...input };\noutput.documentData.lookupCompleted = true;\noutput.documentData.condicionImpositiva = condicionImpositiva;\noutput.documentData.cuitPrefix = prefix;\noutput.documentData.lookupMethod = 'heuristic';\n\noutput.fiscalCategory = {\n  id: categoriaFiscalId,\n  code: categoriaFiscalId === 1 ? 'RI' : (categoriaFiscalId === 4 ? 'MT' : 'CF'),\n  invoiceType,\n  requiresLegend\n};\n\noutput.invoiceType = invoiceType;\n\nif (requiresLegend) {\n  output.invoiceLegend = 'El crédito fiscal discriminado en el presente comprobante, sólo podrá ser computado a efectos del Régimen de Sostenimiento e Inclusión Fiscal para Pequeños Contribuyentes de la Ley Nº 27.618';\n}\n\nreturn { json: output };"
+      },
+      "id": "25a0990d-f349-49b0-9621-0bde9df7fb6f",
+      "name": "CUIT_Lookup1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        1616
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "15952b3a-1e98-4718-bf83-4b4f4926a63d",
+      "name": "Merge_Paths1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -400,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * CLIENT LOOKUP & INVOICE PREP v3.1\n * =================================\n */\n\nconst accessToken = $('Xubio_Token1').first().json.access_token;\nconst customerData = $json;\nconst shopifyData = $('Shopify Trigger3').first().json;\n\nconst headers = {\n  'Authorization': `Bearer ${accessToken}`,\n  'Content-Type': 'application/json'\n};\n\nlet debugInfo = [];\nlet existingClient = null;\n\n// 1. Search for existing client by email\nconst email = customerData.customer.email;\nif (email) {\n  try {\n    const searchUrl = `https://xubio.com/API/1.1/clienteBean?email=${encodeURIComponent(email)}`;\n    const data = await this.helpers.request({\n      method: 'GET',\n      uri: searchUrl,\n      headers,\n      json: true\n    });\n    if (Array.isArray(data) && data.length > 0) {\n      existingClient = data[0];\n      debugInfo.push(`Found client by email: ${existingClient.cliente_id}`);\n    }\n  } catch (error) {\n    debugInfo.push(`Email search error: ${error.message}`);\n  }\n}\n\n// 2. If not found, search by CUIT/DNI\nif (!existingClient && customerData.documentData.document.number) {\n  try {\n    const allClients = await this.helpers.request({\n      method: 'GET',\n      uri: 'https://xubio.com/API/1.1/clienteBean',\n      headers,\n      json: true\n    });\n    const docNumber = customerData.documentData.document.number;\n    existingClient = allClients.find(c => {\n      const clientCuit = (c.cuit || '').replace(/[^0-9]/g, '');\n      return clientCuit === docNumber;\n    });\n    if (existingClient) {\n      debugInfo.push(`Found client by CUIT: ${existingClient.cliente_id}`);\n    }\n  } catch (error) {\n    debugInfo.push(`CUIT search error: ${error.message}`);\n  }\n}\n\n// 3. Get Punto de Venta\nlet puntoVentaId = null;\nlet puntoVentaCodigo = '00001';\ntry {\n  const pvData = await this.helpers.request({\n    method: 'GET',\n    uri: 'https://xubio.com/API/1.1/puntoVentaBean',\n    headers,\n    json: true\n  });\n  if (Array.isArray(pvData) && pvData.length > 0) {\n    const pv = pvData[0];\n    puntoVentaId = pv.puntoVentaId ?? pv.puntoVenta_id ?? pv.ID ?? pv.id;\n    puntoVentaCodigo = pv.puntoVenta || pv.codigo || '00001';\n    debugInfo.push(`PuntoVenta ID: ${puntoVentaId}, Codigo: ${puntoVentaCodigo}`);\n  }\n} catch (error) {\n  debugInfo.push(`PuntoVenta error: ${error.message}`);\n}\n\n// 4. Get talonario for invoice numbering\nconst letraComprobante = customerData.invoiceType || 'B';\nlet ultimoNumero = 0;\ntry {\n  const talonarioUrl = `https://xubio.com/API/1.1/talonario?puntoDeVenta=${puntoVentaCodigo}&letraComprobante=${letraComprobante}&tipoComprobante=Facturas de Venta ${letraComprobante}`;\n  const talonarioData = await this.helpers.request({\n    method: 'GET',\n    uri: talonarioUrl,\n    headers,\n    json: true\n  });\n  if (Array.isArray(talonarioData) && talonarioData.length > 0) {\n    ultimoNumero = parseInt(talonarioData[0].ultimoUtilizado) || 0;\n    debugInfo.push(`Ultimo utilizado Factura ${letraComprobante}: ${ultimoNumero}`);\n  }\n} catch (error) {\n  debugInfo.push(`Talonario error: ${error.message}`);\n}\n\nconst nextNumero = ultimoNumero + 1;\nconst numeroDocumento = `${letraComprobante}-${puntoVentaCodigo}-${String(nextNumero).padStart(8, '0')}`;\n\n// 5. Xubio tipo comprobante mapping\nconst TIPO_COMPROBANTE = {\n  'A': 1,   // Factura A\n  'B': 6,   // Factura B\n  'C': 11,  // Factura C\n  'E': 19   // Factura E (Export)\n};\n\nreturn {\n  json: {\n    clientExists: !!existingClient,\n    existingClientId: existingClient?.cliente_id || null,\n    existingClientName: existingClient?.nombre || null,\n    customer: customerData.customer,\n    documentData: customerData.documentData,\n    fiscalCategory: customerData.fiscalCategory,\n    invoiceType: letraComprobante,\n    tipoComprobante: TIPO_COMPROBANTE[letraComprobante] || 6,\n    puntoVentaId,\n    puntoVentaCodigo,\n    numeroDocumento,\n    transaccionProductoItems: customerData.transaccionProductoItems,\n    productSummary: customerData.productSummary,\n    orderTotal: customerData.orderTotal,\n    shopifyOrderId: customerData.shopifyOrderId,\n    shopifyOrderNumber: customerData.shopifyOrderNumber,\n    currency: customerData.currency,\n    access_token: accessToken,\n    invoiceLegend: customerData.invoiceLegend || null,\n    debug: debugInfo\n  }\n};"
+      },
+      "id": "9cd8bcf3-0b9d-4b2c-ae62-564738b78899",
+      "name": "Client_Lookup1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check-exists",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.clientExists }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f4f84731-a4a8-4ea5-9771-88e0806dceed",
+      "name": "Client_Exists?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cid",
+              "name": "cliente_id",
+              "type": "number",
+              "value": "={{ $json.existingClientId }}"
+            },
+            {
+              "id": "pass-all",
+              "name": "invoiceData",
+              "type": "object",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8719805-59ea-4ea2-a573-99d872955063",
+      "name": "Use_Existing_Client2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        1616
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://xubio.com/API/1.1/clienteBean",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nombre\": \"{{ $json.customer.nombre }} {{ $json.customer.apellido }}\",\n  \"primerNombre\": \"{{ $json.customer.nombre }}\",\n  \"primerApellido\": \"{{ $json.customer.apellido }}\",\n  \"razonSocial\": \"{{ $json.customer.nombre }} {{ $json.customer.apellido }}\",\n  \"email\": \"{{ $json.customer.email }}\",\n  \"telefono\": \"{{ $json.customer.phone }}\",\n  \"direccion\": \"{{ $json.customer.address }}\",\n  \"codigoPostal\": \"{{ $json.customer.zip }}\",\n  \"cuit\": \"{{ $json.documentData.document.number || '' }}\",\n  \"identificacionTributaria\": { \"ID\": {{ $json.documentData.document.type === 'CUIT' ? 80 : ($json.documentData.document.type === 'DNI' ? 96 : 9) }} },\n  \"categoriaFiscal\": { \"ID\": {{ $json.fiscalCategory.id }} },\n  \"pais\": { \"ID\": {{ $json.documentData.paisId }} },\n  \"esclienteextranjero\": {{ $json.documentData.esclienteextranjero }}\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "a95f867b-daf8-42c8-90c0-b403d418e4a9",
+      "name": "Create_Client1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        320,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * ERROR HANDLER FOR CLIENT CREATION v4.1\n * ======================================\n * Handles cases where client already exists or other API errors\n * \n * CHANGES IN v4.1:\n * - Fixed duplicate detection to also check 'description' field\n * - Xubio returns detailed error in 'description' field, not just 'error'\n * - Example: \"Ya existe el nombre X, este ha sido creado anteriormente como X\"\n */\n\nconst clientResponse = $json;\nconst lookupData = $('Client_Lookup1').first().json;\n\n// SUCCESS CHECK: Xubio returns cliente_id when client is created successfully\nconst clienteId = clientResponse.cliente_id || clientResponse.ID || clientResponse.id;\n\nif (clienteId) {\n  // SUCCESS - client was created\n  return {\n    json: {\n      success: true,\n      cliente_id: clienteId,\n      isDuplicateError: false,\n      errorType: null,\n      requiresNotification: false,\n      lookupData\n    }\n  };\n}\n\n// No cliente_id found - check for error indicators\n// IMPORTANT: Xubio puts detailed error info in 'description' field!\nconst errorMessage = clientResponse.error || \n                    clientResponse.mensaje || \n                    clientResponse.message || \n                    clientResponse.Message ||\n                    '';\n\nconst errorDescription = clientResponse.description || '';\n\n// Combine both for full error context\nconst fullErrorText = `${errorMessage} ${errorDescription}`.toLowerCase();\n\nconst hasErrorIndicator = clientResponse.error || \n                         clientResponse.mensaje || \n                         clientResponse.description ||\n                         clientResponse.status === 'error' ||\n                         clientResponse.statusCode >= 400 ||\n                         clientResponse.codeResponse === '400' ||\n                         errorMessage.length > 0;\n\n// Check for \"client already exists\" type errors in BOTH error and description fields\nconst isDuplicateError = fullErrorText.includes('existe') ||\n                         fullErrorText.includes('duplicate') ||\n                         fullErrorText.includes('ya existe') ||\n                         fullErrorText.includes('already exists') ||\n                         fullErrorText.includes('duplicado') ||\n                         fullErrorText.includes('creado anteriormente');\n\nif (hasErrorIndicator) {\n  // Use description if available (more detailed), otherwise use error\n  const displayError = errorDescription || errorMessage || 'Unknown error - no cliente_id returned';\n  \n  return {\n    json: {\n      success: false,\n      isDuplicateError,\n      errorMessage: displayError,\n      errorType: isDuplicateError ? 'DUPLICATE_CLIENT' : 'API_ERROR',\n      requiresNotification: !isDuplicateError,\n      lookupData,\n      shopifyOrderId: lookupData.shopifyOrderId,\n      shopifyOrderNumber: lookupData.shopifyOrderNumber,\n      customerEmail: lookupData.customer?.email,\n      customerName: lookupData.customer?.fullName,\n      documentNumber: lookupData.documentData?.document?.number,\n      rawResponse: JSON.stringify(clientResponse)\n    }\n  };\n}\n\n// Edge case: No cliente_id but also no clear error - treat as error\nreturn {\n  json: {\n    success: false,\n    isDuplicateError: false,\n    errorMessage: 'Unexpected response from Xubio - no cliente_id and no error message',\n    errorType: 'UNKNOWN_RESPONSE',\n    requiresNotification: true,\n    lookupData,\n    rawResponse: JSON.stringify(clientResponse)\n  }\n};"
+      },
+      "id": "error-handler-client-1",
+      "name": "Handle_Client_Creation_Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check-success",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-client-success-1",
+      "name": "Client_Created_OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        1824
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cid",
+              "name": "cliente_id",
+              "type": "number",
+              "value": "={{ $json.cliente_id }}"
+            },
+            {
+              "id": "pass-data",
+              "name": "invoiceData",
+              "type": "object",
+              "value": "={{ $json.lookupData }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "075b21a7-87a0-4cbe-b56a-bc06a0160207",
+      "name": "Use_New_Client2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        920,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check-duplicate",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.isDuplicateError }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-duplicate-error-1",
+      "name": "Is_Duplicate_Error?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        920,
+        1936
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * RETRY CLIENT LOOKUP - For duplicate client errors\n * ==================================================\n * If client creation failed because client exists, try to find and use it\n */\n\nconst input = $json;\nconst lookupData = input.lookupData;\nconst accessToken = lookupData.access_token;\n\nconst headers = {\n  'Authorization': `Bearer ${accessToken}`,\n  'Content-Type': 'application/json'\n};\n\nlet existingClient = null;\nlet debugInfo = ['Retry lookup triggered due to duplicate error'];\n\n// Search by email\nconst email = lookupData.customer?.email;\nif (email) {\n  try {\n    const searchUrl = `https://xubio.com/API/1.1/clienteBean?email=${encodeURIComponent(email)}`;\n    const data = await this.helpers.request({\n      method: 'GET',\n      uri: searchUrl,\n      headers,\n      json: true\n    });\n    if (Array.isArray(data) && data.length > 0) {\n      existingClient = data[0];\n      debugInfo.push(`Found client by email on retry: ${existingClient.cliente_id}`);\n    }\n  } catch (error) {\n    debugInfo.push(`Retry email search error: ${error.message}`);\n  }\n}\n\n// Search by CUIT if still not found\nif (!existingClient && lookupData.documentData?.document?.number) {\n  try {\n    const allClients = await this.helpers.request({\n      method: 'GET',\n      uri: 'https://xubio.com/API/1.1/clienteBean',\n      headers,\n      json: true\n    });\n    const docNumber = lookupData.documentData.document.number;\n    existingClient = allClients.find(c => {\n      const clientCuit = (c.cuit || '').replace(/[^0-9]/g, '');\n      return clientCuit === docNumber;\n    });\n    if (existingClient) {\n      debugInfo.push(`Found client by CUIT on retry: ${existingClient.cliente_id}`);\n    }\n  } catch (error) {\n    debugInfo.push(`Retry CUIT search error: ${error.message}`);\n  }\n}\n\n// Search by name as last resort\nif (!existingClient && lookupData.customer?.fullName) {\n  try {\n    const allClients = await this.helpers.request({\n      method: 'GET',\n      uri: 'https://xubio.com/API/1.1/clienteBean',\n      headers,\n      json: true\n    });\n    const fullName = lookupData.customer.fullName.toLowerCase();\n    existingClient = allClients.find(c => {\n      const clientName = (c.nombre || '').toLowerCase();\n      return clientName.includes(fullName) || fullName.includes(clientName);\n    });\n    if (existingClient) {\n      debugInfo.push(`Found client by name on retry: ${existingClient.cliente_id}`);\n    }\n  } catch (error) {\n    debugInfo.push(`Retry name search error: ${error.message}`);\n  }\n}\n\nif (existingClient) {\n  return {\n    json: {\n      cliente_id: existingClient.cliente_id,\n      invoiceData: lookupData,\n      recoveredFromError: true,\n      debug: debugInfo\n    }\n  };\n}\n\n// Could not find client even on retry - this needs notification\nreturn {\n  json: {\n    success: false,\n    fatalError: true,\n    errorMessage: 'Client creation failed and retry lookup also failed',\n    lookupData,\n    debug: debugInfo,\n    requiresNotification: true,\n    errorType: 'RETRY_FAILED'\n  }\n};"
+      },
+      "id": "retry-client-lookup-1",
+      "name": "Retry_Client_Lookup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        1872
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "check-retry-success",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists"
+              },
+              "leftValue": "={{ $json.cliente_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-retry-success-1",
+      "name": "Retry_Found_Client?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        1872
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/*\n * PREPARE ERROR DATA FOR AIRTABLE v4.0\n * =====================================\n * Updated to output Airtable-compatible field structure\n * \n * Airtable Error Logs Table Fields:\n * - Error Message (singleLineText)\n * - Stack Trace (multilineText)\n * - Timestamp (dateTime) - ISO format\n * - Severity Level (singleSelect: Low/Medium/High/Critical)\n * - Status (singleSelect: New/In Progress/Resolved/Open/Escalated/Closed)\n * - Client (linkedRecord) - links to Clients table\n * - Automation Name/Type (singleLineText)\n * \n * Alfa Hackers Client Record ID: recf1ja8wDrElUQzu\n */\n\nconst input = $json;\nconst lookupData = input.lookupData || {};\n\n// Format timestamp as ISO 8601 for Airtable dateTime field\nconst now = new Date();\nconst timestamp = now.toISOString();\n\n// Determine severity based on error type\nlet severityLevel = 'Medium';\nif (input.errorType === 'RETRY_FAILED' || input.fatalError) {\n  severityLevel = 'Critical';\n} else if (input.errorType === 'DUPLICATE_CLIENT') {\n  severityLevel = 'Low';\n} else if (input.errorType === 'API_ERROR') {\n  severityLevel = 'High';\n}\n\n// Build error message summary\nconst customerInfo = lookupData.customer?.fullName || input.customerName || 'Unknown';\nconst shopifyOrder = lookupData.shopifyOrderNumber || input.shopifyOrderNumber || 'N/A';\nconst errorMsg = input.errorMessage || 'Unknown error';\n\nconst errorMessageSummary = `[Order #${shopifyOrder}] ${input.errorType || 'UNKNOWN'}: ${errorMsg.substring(0, 100)}`;\n\n// Build detailed stack trace / debug info\nconst stackTrace = [\n  `Error Type: ${input.errorType || 'UNKNOWN'}`,\n  `Error Message: ${errorMsg}`,\n  `---`,\n  `Shopify Order: #${shopifyOrder}`,\n  `Customer: ${customerInfo}`,\n  `Email: ${lookupData.customer?.email || input.customerEmail || 'N/A'}`,\n  `CUIT/DNI: ${lookupData.documentData?.document?.number || input.documentNumber || 'N/A'}`,\n  `Document Type: ${lookupData.documentData?.document?.type || 'N/A'}`,\n  `---`,\n  `Debug Info:`,\n  JSON.stringify(input.debug || [], null, 2),\n  `---`,\n  `Raw Response:`,\n  input.rawResponse || 'N/A'\n].join('\\n');\n\nreturn {\n  json: {\n    // Airtable fields structure\n    fields: {\n      'Error Message': errorMessageSummary,\n      'Stack Trace': stackTrace,\n      'Timestamp': timestamp,\n      'Severity Level': severityLevel,\n      'Status': 'New',\n      'Client': ['recf1ja8wDrElUQzu'],  // Linked record to Alfa Hackers\n      'Automation Name/Type': 'Invoice Automation - Client Creation'\n    },\n    // Keep original data for debugging\n    _original: {\n      errorType: input.errorType,\n      shopifyOrderNumber: shopifyOrder,\n      customerName: customerInfo\n    }\n  }\n};"
+      },
+      "id": "error-notification-prep-1",
+      "name": "Prepare_Error_Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        2096
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/app4GVe16eRf8xI1S/tblmKySw4QIdCfaLA",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: $json.fields }) }}",
+        "options": {}
+      },
+      "id": "log-error-airtable-1",
+      "name": "Log_Error_to_Airtable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1520,
+        2096
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_AIRTABLE_CREDENTIAL_ID",
+          "name": "Airtable Personal Access Token"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "d2d8017a-96ca-44ed-92e0-738fe0fcdee7",
+      "name": "Merge_Client_Paths1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1520,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://xubio.com/API/1.1/comprobanteVentaBean",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.invoiceData.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tipo\": {{ $json.invoiceData.tipoComprobante }},\n  \"numeroDocumento\": \"{{ $json.invoiceData.numeroDocumento }}\",\n  \"fecha\": \"{{ $now.format('yyyy-MM-dd') }}\",\n  \"fechaVto\": \"{{ $now.format('yyyy-MM-dd') }}\",\n  \"condicionDePago\": 1,\n  \"descripcion\": \"Pedido Shopify #{{ $json.invoiceData.shopifyOrderNumber }}{{ $json.invoiceData.invoiceLegend ? ' | ' + $json.invoiceData.invoiceLegend : '' }}\",\n  \"cliente\": {\n    \"ID\": {{ $json.cliente_id }}\n  },\n  \"puntoVenta\": {\n    \"ID\": {{ $json.invoiceData.puntoVentaId }}\n  },\n  \"transaccionProductoItems\": {{ JSON.stringify($json.invoiceData.transaccionProductoItems) }}\n}",
+        "options": {}
+      },
+      "id": "498cd72a-a2e7-48cb-80ce-464c903fc5d9",
+      "name": "Create_Invoice2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1760,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://xubio.com/API/1.1/imprimirPDF?idtransaccion={{ $json.transaccionid }}&tipoimpresion=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $('Xubio_Token1').item.json.access_token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "528e76fb-671c-4c26-abee-51c081983e24",
+      "name": "Get_PDF_URL2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2000,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.urlPdf }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "489f79d0-4ece-4822-adc8-89c7a1ddeb78",
+      "name": "Download_PDF2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2240,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "name": "=Factura_{{ $('Create_Invoice2').item.json.numeroDocumento }}_{{ $now.format('yyyy-MM-dd') }}.pdf",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "16Ecb448FIC5NElcRPr6ocqcPRDjHpBCV",
+          "mode": "list",
+          "cachedResultName": "Test",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/16Ecb448FIC5NElcRPr6ocqcPRDjHpBCV"
+        },
+        "options": {}
+      },
+      "id": "9453a9b4-ab77-464f-bbd2-3a6780392e64",
+      "name": "Upload_to_Drive2",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2480,
+        1728
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "4Uwid3atc811hZ46",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const invoiceData = $('Create_Invoice2').first().json;\nconst lookupData = $('Client_Lookup1').first().json;\nconst driveFile = $('Upload_to_Drive2').first().json;\n\nconst productSummary = (lookupData.productSummary || []).map(p => p.shopifyProduct).join(', ');\n\nreturn {\n  json: {\n    Fecha: $now.format('yyyy-MM-dd HH:mm:ss'),\n    'Numero Factura': invoiceData.numeroDocumento,\n    'Tipo Factura': lookupData.invoiceType,\n    Cliente: lookupData.customer?.fullName || 'N/A',\n    Email: lookupData.customer?.email || 'N/A',\n    'CUIT/DNI': lookupData.documentData?.document?.formatted || lookupData.documentData?.rawInput || 'N/A',\n    'Categoria Fiscal': lookupData.fiscalCategory?.code || 'N/A',\n    'Pedido Shopify': `#${lookupData.shopifyOrderNumber}`,\n    Producto: productSummary,\n    Total: lookupData.orderTotal,\n    'Factura Link': driveFile.webViewLink || driveFile.webContentLink || ''\n  }\n};"
+      },
+      "id": "dc5cf9cb-8791-4758-9151-56d3c26271ce",
+      "name": "Prepare_Sheets_Data1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        1728
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1CgIJa3qAd6F5SuYGLToVhnO8iJNjaahsnU2K7qX3pLw",
+          "mode": "list",
+          "cachedResultName": "Gestion Integral Argentina 2026",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CgIJa3qAd6F5SuYGLToVhnO8iJNjaahsnU2K7qX3pLw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 95851373,
+          "mode": "list",
+          "cachedResultName": "Diario 2026",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CgIJa3qAd6F5SuYGLToVhnO8iJNjaahsnU2K7qX3pLw/edit#gid=95851373"
+        },
+        "options": {}
+      },
+      "id": "773928dd-a3e6-43ee-ab64-1da1c58d6840",
+      "name": "Append_to_Sheets2",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2960,
+        1728
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XTsQml1BuYiYf6PN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "topic": "orders/paid"
+      },
+      "id": "4b73ea1a-397e-4884-9a8d-952df4acf499",
+      "name": "Shopify Trigger3",
+      "type": "n8n-nodes-base.shopifyTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        1728
+      ],
+      "webhookId": "9d0f2e5f-a13a-4a69-a96f-312745f4d3f5",
+      "credentials": {
+        "shopifyOAuth2Api": {
+          "id": "ukbwAgkDeqrnhqqa",
+          "name": "Alfa Hackers"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Shopify Trigger3": [
+      {
+        "json": {
+          "id": 10377622585636,
+          "admin_graphql_api_id": "gid://shopify/Order/10377622585636",
+          "app_id": 580111,
+          "browser_ip": "2001:818:e809:5700:e1b6:f33d:1730:fc55",
+          "buyer_accepts_marketing": false,
+          "cancel_reason": null,
+          "cancelled_at": null,
+          "cart_token": "hWN7dak10qoGZnMwUBPwlktn",
+          "checkout_id": 40802278474020,
+          "checkout_token": "f3b1994a4e4a7f09d2988130b578fd24",
+          "client_details": {
+            "accept_language": "es-AR",
+            "browser_height": null,
+            "browser_ip": "2001:818:e809:5700:e1b6:f33d:1730:fc55",
+            "browser_width": null,
+            "session_hash": null,
+            "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+          },
+          "closed_at": null,
+          "confirmation_number": "IZ7NWVX5J",
+          "confirmed": true,
+          "contact_email": "ostanfederico+5@gmail.com",
+          "created_at": "2026-01-15T10:40:32-03:00",
+          "currency": "ARS",
+          "email": "ostanfederico+5@gmail.com",
+          "financial_status": "paid",
+          "name": "#1569",
+          "order_number": 1569,
+          "billing_address": {
+            "first_name": "Federico",
+            "address1": "Rua dos Rua 123",
+            "phone": "1178876189",
+            "city": "Buenos Aires",
+            "zip": "1648",
+            "province": "Buenos Aires",
+            "country": "Argentina",
+            "last_name": "Ostan",
+            "address2": "12",
+            "company": "39921301",
+            "name": "Federico Ostan",
+            "country_code": "AR",
+            "province_code": "B"
+          },
+          "customer": {
+            "id": 23421937352996,
+            "first_name": "Federico",
+            "last_name": "Ostan",
+            "email": "ostanfederico+5@gmail.com"
+          },
+          "line_items": [
+            {
+              "id": 32410281148708,
+              "name": "testing product",
+              "price": "0.00",
+              "quantity": 1,
+              "title": "testing product"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Xubio_Token1": {
+      "main": [
+        [
+          {
+            "node": "Product_Mapper1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product_Mapper1": {
+      "main": [
+        [
+          {
+            "node": "Customer_Type_Detector1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer_Type_Detector1": {
+      "main": [
+        [
+          {
+            "node": "Needs_CUIT_Lookup?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs_CUIT_Lookup?1": {
+      "main": [
+        [
+          {
+            "node": "CUIT_Lookup1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge_Paths1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "CUIT_Lookup1": {
+      "main": [
+        [
+          {
+            "node": "Merge_Paths1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge_Paths1": {
+      "main": [
+        [
+          {
+            "node": "Client_Lookup1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client_Lookup1": {
+      "main": [
+        [
+          {
+            "node": "Client_Exists?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client_Exists?1": {
+      "main": [
+        [
+          {
+            "node": "Use_Existing_Client2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create_Client1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use_Existing_Client2": {
+      "main": [
+        [
+          {
+            "node": "Merge_Client_Paths1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Client1": {
+      "main": [
+        [
+          {
+            "node": "Handle_Client_Creation_Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle_Client_Creation_Error": {
+      "main": [
+        [
+          {
+            "node": "Client_Created_OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client_Created_OK?": {
+      "main": [
+        [
+          {
+            "node": "Use_New_Client2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is_Duplicate_Error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use_New_Client2": {
+      "main": [
+        [
+          {
+            "node": "Merge_Client_Paths1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Is_Duplicate_Error?": {
+      "main": [
+        [
+          {
+            "node": "Retry_Client_Lookup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare_Error_Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry_Client_Lookup": {
+      "main": [
+        [
+          {
+            "node": "Retry_Found_Client?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry_Found_Client?": {
+      "main": [
+        [
+          {
+            "node": "Merge_Client_Paths1",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Prepare_Error_Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare_Error_Data": {
+      "main": [
+        [
+          {
+            "node": "Log_Error_to_Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge_Client_Paths1": {
+      "main": [
+        [
+          {
+            "node": "Create_Invoice2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Invoice2": {
+      "main": [
+        [
+          {
+            "node": "Get_PDF_URL2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_PDF_URL2": {
+      "main": [
+        [
+          {
+            "node": "Download_PDF2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download_PDF2": {
+      "main": [
+        [
+          {
+            "node": "Upload_to_Drive2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload_to_Drive2": {
+      "main": [
+        [
+          {
+            "node": "Prepare_Sheets_Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare_Sheets_Data1": {
+      "main": [
+        [
+          {
+            "node": "Append_to_Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shopify Trigger3": {
+      "main": [
+        [
+          {
+            "node": "Xubio_Token1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "workflow-v4.1-fixed-duplicate-detection",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc8ec0ba9a3826ccab83c9dcce7bac1f300958b85da407fefe7e9a0cda1d0121"
+  },
+  "id": "2BgJh8HqhkHKNcUJ",
+  "tags": []
+}

@@ -1,6 +1,9 @@
 # Claude Code local settings (contains API keys)
 .claude/settings.local.json
 
+# MCP configuration (contains API keys)
+.mcp.json
+
 # Node modules (if any)
 node_modules/
 

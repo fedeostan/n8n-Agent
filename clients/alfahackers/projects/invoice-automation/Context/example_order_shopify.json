@@ -1,0 +1,402 @@
+[
+  {
+    "id": 10364518957348,
+    "admin_graphql_api_id": "gid://shopify/Order/10364518957348",
+    "app_id": 580111,
+    "browser_ip": "2001:818:e809:5700:edb9:e079:657:97a0",
+    "buyer_accepts_marketing": false,
+    "cancel_reason": null,
+    "cancelled_at": null,
+    "cart_token": "hWN7I0MvFCuLhenLNYvjbRbP",
+    "checkout_id": 40770168357156,
+    "checkout_token": "eebed26a9dd42ed355e0ed1b143e414e",
+    "client_details": {
+      "accept_language": "es-AR",
+      "browser_height": null,
+      "browser_ip": "2001:818:e809:5700:edb9:e079:657:97a0",
+      "browser_width": null,
+      "session_hash": null,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+    },
+    "closed_at": null,
+    "confirmation_number": "5Q88XR80T",
+    "confirmed": true,
+    "contact_email": "empresa@gmail.com",
+    "created_at": "2026-01-06T06:32:51-03:00",
+    "currency": "ARS",
+    "current_shipping_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "current_subtotal_price": "0.00",
+    "current_subtotal_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "current_total_additional_fees_set": null,
+    "current_total_discounts": "0.00",
+    "current_total_discounts_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "current_total_duties_set": null,
+    "current_total_price": "0.00",
+    "current_total_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "current_total_tax": "0.00",
+    "current_total_tax_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "customer_locale": "es-AR",
+    "device_id": null,
+    "discount_codes": [],
+    "duties_included": false,
+    "email": "empresa@gmail.com",
+    "estimated_taxes": false,
+    "financial_status": "paid",
+    "fulfillment_status": null,
+    "landing_site": "/?srsltid=AfmBOoogxKT92HQwikcUVl-30fDMQOwdSGbhn6paLrq2hIq-N5vDCaDY",
+    "landing_site_ref": null,
+    "location_id": null,
+    "merchant_business_entity_id": "MTkzNDI3NDY2NTMy",
+    "merchant_of_record_app_id": null,
+    "name": "#1561",
+    "note": null,
+    "note_attributes": [],
+    "number": 561,
+    "order_number": 1561,
+    "order_status_url": "https://www.alfahackers.com/93427466532/orders/3ec91d00809f448135d686c3f132e848/authenticate?key=37849f91940dad0f5ee5a08e18976f28",
+    "original_total_additional_fees_set": null,
+    "original_total_duties_set": null,
+    "payment_gateway_names": [],
+    "phone": null,
+    "po_number": null,
+    "presentment_currency": "ARS",
+    "processed_at": "2026-01-06T06:32:50-03:00",
+    "reference": null,
+    "referring_site": "https://www.google.com/",
+    "source_identifier": null,
+    "source_name": "web",
+    "source_url": null,
+    "subtotal_price": "0.00",
+    "subtotal_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "tags": "",
+    "tax_exempt": false,
+    "tax_lines": [],
+    "taxes_included": true,
+    "test": false,
+    "token": "3ec91d00809f448135d686c3f132e848",
+    "total_cash_rounding_payment_adjustment_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_cash_rounding_refund_adjustment_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_discounts": "0.00",
+    "total_discounts_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_line_items_price": "0.00",
+    "total_line_items_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_outstanding": "0.00",
+    "total_price": "0.00",
+    "total_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_shipping_price_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_tax": "0.00",
+    "total_tax_set": {
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      },
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "ARS"
+      }
+    },
+    "total_tip_received": "0.00",
+    "total_weight": 0,
+    "updated_at": "2026-01-06T06:32:52-03:00",
+    "user_id": null,
+    "billing_address": {
+      "first_name": "Empresa",
+      "address1": "La direccions",
+      "phone": "1178876189",
+      "city": "Buenos Aires",
+      "zip": "1234",
+      "province": "Buenos Aires",
+      "country": "Argentina",
+      "last_name": "Test",
+      "address2": null,
+      "company": "30-39921301-1",
+      "latitude": -34.6048354,
+      "longitude": -58.4005397,
+      "name": "Empresa Test",
+      "country_code": "AR",
+      "province_code": "B"
+    },
+    "customer": {
+      "id": 23389349740836,
+      "created_at": "2026-01-06T06:32:50-03:00",
+      "updated_at": "2026-01-06T06:32:51-03:00",
+      "first_name": "Empresa",
+      "last_name": "Test",
+      "state": "disabled",
+      "note": null,
+      "verified_email": true,
+      "multipass_identifier": null,
+      "tax_exempt": false,
+      "email": "empresa@gmail.com",
+      "phone": null,
+      "currency": "ARS",
+      "tax_exemptions": [],
+      "admin_graphql_api_id": "gid://shopify/Customer/23389349740836",
+      "default_address": {
+        "id": 33366649438500,
+        "customer_id": 23389349740836,
+        "first_name": "Empresa",
+        "last_name": "Test",
+        "company": "30-39921301-1",
+        "address1": "La direccions",
+        "address2": null,
+        "city": "Buenos Aires",
+        "province": "Buenos Aires",
+        "country": "Argentina",
+        "zip": "1234",
+        "phone": "1178876189",
+        "name": "Empresa Test",
+        "province_code": "B",
+        "country_code": "AR",
+        "country_name": "Argentina",
+        "default": true
+      }
+    },
+    "discount_applications": [],
+    "fulfillments": [],
+    "line_items": [
+      {
+        "id": 32386244542756,
+        "admin_graphql_api_id": "gid://shopify/LineItem/32386244542756",
+        "attributed_staffs": [],
+        "current_quantity": 1,
+        "fulfillable_quantity": 1,
+        "fulfillment_service": "manual",
+        "fulfillment_status": null,
+        "gift_card": false,
+        "grams": 0,
+        "name": "testing product",
+        "price": "0.00",
+        "price_set": {
+          "shop_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          },
+          "presentment_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          }
+        },
+        "product_exists": true,
+        "product_id": 10312368685348,
+        "properties": [],
+        "quantity": 1,
+        "requires_shipping": true,
+        "sales_line_item_group_id": null,
+        "sku": null,
+        "taxable": true,
+        "title": "testing product",
+        "total_discount": "0.00",
+        "total_discount_set": {
+          "shop_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          },
+          "presentment_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          }
+        },
+        "variant_id": 51550812766500,
+        "variant_inventory_management": "shopify",
+        "variant_title": null,
+        "vendor": "alfahackers.com",
+        "tax_lines": [
+          {
+            "channel_liable": false,
+            "price": "0.00",
+            "price_set": {
+              "shop_money": {
+                "amount": "0.00",
+                "currency_code": "ARS"
+              },
+              "presentment_money": {
+                "amount": "0.00",
+                "currency_code": "ARS"
+              }
+            },
+            "rate": 0.21,
+            "title": "VAT"
+          }
+        ],
+        "duties": [],
+        "discount_allocations": []
+      }
+    ],
+    "payment_terms": null,
+    "refunds": [],
+    "shipping_address": {
+      "first_name": "Empresa",
+      "address1": "La direccions",
+      "phone": "1178876189",
+      "city": "Buenos Aires",
+      "zip": "1234",
+      "province": "Buenos Aires",
+      "country": "Argentina",
+      "last_name": "Test",
+      "address2": null,
+      "company": "30-39921301-1",
+      "latitude": -34.6048354,
+      "longitude": -58.4005397,
+      "name": "Empresa Test",
+      "country_code": "AR",
+      "province_code": "B"
+    },
+    "shipping_lines": [
+      {
+        "id": 9368824840484,
+        "carrier_identifier": "11eec2e6a3f0645401d794e6ad809745",
+        "code": "PACK",
+        "current_discounted_price_set": {
+          "shop_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          },
+          "presentment_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          }
+        },
+        "discounted_price": "0.00",
+        "discounted_price_set": {
+          "shop_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          },
+          "presentment_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          }
+        },
+        "is_removed": false,
+        "phone": null,
+        "price": "0.00",
+        "price_set": {
+          "shop_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          },
+          "presentment_money": {
+            "amount": "0.00",
+            "currency_code": "ARS"
+          }
+        },
+        "requested_fulfillment_service_id": null,
+        "source": "SOUTH POST S.A.",
+        "title": "Entrega a Domicilio",
+        "tax_lines": [],
+        "discount_allocations": []
+      }
+    ],
+    "returns": [],
+    "line_item_groups": []
+  }
+]
